@@ -1,0 +1,22 @@
+This file holds links to information about transformer networks and related topics: 
+	
+	Implementing the network: 
+	https://www.youtube.com/watch?v=CHFiTTPeyUw
+	
+	Fourier Neural Operator: 
+	https://www.youtube.com/watch?v=IaS72aHrJKE
+
+	Deep learning to discover coordinates for Dynamics: 
+	https://www.youtube.com/watch?v=KmQkDgu-Qp0
+
+	Solving PDEs with Transformers: 
+	https://medium.com/analytics-vidhya/solving-differential-equations-with-transformers-21648d3a1695
+
+	Chapter on basic transformers: 
+	https://learning.oreilly.com/library/view/generative-deep-learning/9781098134174/ch09.html#idm45608666731984
+
+	Positional encoding: 
+	https://kazemnejad.com/blog/transformer_architecture_positional_encoding/
+
+
+	
