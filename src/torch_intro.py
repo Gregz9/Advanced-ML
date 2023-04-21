@@ -42,6 +42,7 @@ W_v = torch.rand(d_v, d)
 
 # Creating the Q, V, K matrices
 x_2 = embedded_sentence[1]
+print(embedded_sentence[1])
 query_2 = W_q.matmul(x_2)
 print(query_2)
 key_2 = W_k.matmul(x_2)
@@ -74,12 +75,12 @@ multihead_W_key = torch.rand(h, d_k, d)
 multihead_W_value = torch.rand(h, d_v, d)
 
 multihead_query_2 = multihead_W_query @ x_2
-print(multihead_query_2[0])
+# print(multihead_query_2[0])
 multihead_key_2 = multihead_W_key @ x_2
 multihead_value_2 = multihead_W_value @ x_2
 
 stacked_inputs = embedded_sentence.T.repeat(3, 1, 1)
-print(stacked_inputs[1])
+# print(stacked_inputs[1])
 multihead_queries = torch.bmm(multihead_W_key, stacked_inputs)
 
 query = (W_q @ embedded_sentence.T).T
