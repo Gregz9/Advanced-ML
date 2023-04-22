@@ -14,7 +14,9 @@ def GELU(x):
 
 
 class MLP(nn.Module):
-    def __init__(self, in_dim, hid_dim, out_dim, hidden_act, criterion, optimizer):
+    def __init__(
+        self, in_dim, hid_dim, out_dim, hidden_act, output_act, criterion, optimizer
+    ):
         super(MLP, self).__init__()
         self.input_layer = nn.Linear(in_dim, hid_dim)
         if hidden_act == "GeLU":
@@ -22,34 +24,33 @@ class MLP(nn.Module):
         else:
             self.hidden_act = nn.ReLU()
 
+        self.output_act = output_act
         self.output_layer = nn.Linear(hid_dim, out_dim)
-        self.criterion = criterion
+        self.criterion = criterion()
         self.optimizer = optimizer(self.parameters(), lr=0.01)
 
     def forward(self, x):
         x = self.input_layer(x)
         x = self.hidden_act(x)
         x = self.output_layer(x)
+        x = self.output_act(x, dim=1)
         return x
 
-    def backward(self, y_target):
+    def backward(self, y_pred, y_target):
         gradients = {p: torch.zeros_like(p.data) for p in self.parameters()}
 
-        y_pred = self(x)
         self.loss = self.criterion(y_pred, y_target)
         self.optimizer.zero_grad()
         self.loss.backward()
         self.optimizer.step()
 
-        print(y_pred)
-        print(y_target)
         for p in self.parameters():
             gradients[p] += p.grad.data
 
         for p in self.parameters():
             p.grad.zero_()
 
-        return gradients
+        return gradients, self.loss.item()
 
 
 if __name__ == "__main__":
@@ -59,7 +60,7 @@ if __name__ == "__main__":
         ]
     )
 
-    batch_size = 64
+    batch_size = 128
 
     mnist_trainset = datasets.MNIST(
         root="./data", train=True, download=True, transform=transform
@@ -78,29 +79,45 @@ if __name__ == "__main__":
     images, labels = next(iter(train_loader))
 
     print(f"Shape of image: {images[0].size()}")
+    # print(labels[:10])
 
-    # model = MLP(1, 96, 1, "ReLU", nn.MSELoss(), torch.optim.SGD)
-    #
-    # # Define the loss function
-    # # criterion = nn.MSELoss()
-    #
-    # # Define the optimizer
+    model = MLP(
+        (28 * 28), 256, 10, "ReLU", F.softmax, nn.CrossEntropyLoss, torch.optim.Adam
+    )
+
+    # Define the loss function
+    # criterion = nn.MSELoss()
+
+    # Define the optimizer
     # optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-    #
-    # # Generate some example data
+
+    # Generate some example data
     # x = torch.randn(100, 1)
     # y = x.pow(2) + 0.2 * torch.randn(100, 1)
-    #
-    # # Train the model
-    # for epoch in range(1000):
-    #     # Forward pass
-    #     y_pred = model(x)
-    #     # loss = criterion(y_pred, y)
-    #
-    #     # Backward pass and optimization
-    #     model.backward(y)
-    #     # for p in model.parameters():
-    #     # p.data -= 0.01 * gradients[p]
-    #
-    #     if epoch % 100 == 0:
-    #         print("Epoch {}: loss={}".format(epoch, model.loss.item()))
+
+    # Train the model
+    for epoch in range(100):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        for i, (images, labels) in enumerate(train_loader):
+            # Backward pass and optimization
+            outputs = model(images.view(images.size(0), -1))
+            # print(outputs.data)
+            outputs_dec = torch.argmax(outputs.data, dim=1)
+            # import sys
+
+            # sys.exit()
+
+            grad, loss = model.backward(outputs, labels)
+
+            running_loss += loss
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            # Print statistics for this epoch
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = 100 * correct / total
+        print(f"Epoch {epoch+1} loss: {epoch_loss:.4f} accuracy: {epoch_acc:.2f}%")
